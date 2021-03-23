@@ -1614,6 +1614,7 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	int len;
 	Buf buffer = NULL;
 	bool lock_set = false;
+	bitstr_t *bits_prev = NULL;
 
 	debug("_handle_completion for %ps", &job->step_id);
 
@@ -1677,9 +1678,16 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 		bit_fmt(bits_string, sizeof(bits_string), step_complete.bits);
 		debug2("  before bits: %s", bits_string);
 #endif
+		bitstr_t *bits_prev = bit_copy(step_complete.bits);
 		bit_nset(step_complete.bits,
 			 first - (step_complete.rank+1),
 			 last - (step_complete.rank+1));
+		if (bit_equal(step_complete.bits, bits_prev)) {
+			debug("Step complete from %d to %d was already processed on rank %d. Probably a RPC was resent from a child.",
+			      first, last, step_complete.rank);
+			goto timeout;
+		}
+
 #if 0
 		bit_fmt(bits_string, sizeof(bits_string), step_complete.bits);
 		debug2("  after bits: %s", bits_string);
@@ -1691,6 +1699,8 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	jobacctinfo_aggregate(step_complete.jobacct, jobacct);
 timeout:
 	jobacctinfo_destroy(jobacct);
+	if (bits_prev)
+		bit_free(bits_prev);
 	/*********************************************/
 
 	/*

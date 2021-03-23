@@ -40,6 +40,8 @@ documents those changes that are of interest to users and administrators.
  -- Fix single Port= not being applied to range of nodes in slurm.conf
  -- Fix Jobs not requesting a tres are not starting because of that tres limit.
  -- acct_gather_energy/rapl - fix AveWatts calculation.
+ -- slurmstepd - Fix wrong jobacctgather information on a step on multiple nodes
+    due a timeouts sending its the information gathered on its node.
 
 * Changes in Slurm 20.11.5
 ==========================
