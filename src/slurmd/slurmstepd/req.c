@@ -1614,7 +1614,6 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	int len;
 	Buf buffer = NULL;
 	bool lock_set = false;
-	bitstr_t *bits_prev = NULL;
 
 	debug("_handle_completion for %ps", &job->step_id);
 
@@ -1670,20 +1669,30 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	 *  without the hostlist from the credential.
 	 */
 	if (step_complete.bits && (step_complete.rank >= 0)) {
+		int32_t set_bits;
+		int32_t first_bit = first - (step_complete.rank + 1);
+		int32_t last_bit = last - (step_complete.rank + 1);
+		/* bit_set_count_range is [first, end) so +1 last_bit */
+		int32_t last_bit_range = last_bit + 1;
+
 #if 0
 		char bits_string[128];
 		debug2("Setting range %d (bit %d) through %d(bit %d)",
-		       first, first-(step_complete.rank+1),
-		       last, last-(step_complete.rank+1));
+		       first, first_bit,
+		       last, last_bit);
 		bit_fmt(bits_string, sizeof(bits_string), step_complete.bits);
 		debug2("  before bits: %s", bits_string);
 #endif
-		bitstr_t *bits_prev = bit_copy(step_complete.bits);
-		bit_nset(step_complete.bits,
-			 first - (step_complete.rank+1),
-			 last - (step_complete.rank+1));
-		if (bit_equal(step_complete.bits, bits_prev)) {
+		if (!(set_bits = bit_set_count_range(step_complete.bits,
+						     first_bit,
+						     last_bit_range))) {
+			bit_nset(step_complete.bits, first_bit, last_bit);
+		} else if (set_bits == (last_bit_range - first_bit)) {
 			debug("Step complete from %d to %d was already processed on rank %d. Probably a RPC was resent from a child.",
+			      first, last, step_complete.rank);
+			goto timeout;
+		} else {
+			error("Step complete from %d to %d was half-way processed on rank %d. This should never happen.",
 			      first, last, step_complete.rank);
 			goto timeout;
 		}
@@ -1699,8 +1708,6 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	jobacctinfo_aggregate(step_complete.jobacct, jobacct);
 timeout:
 	jobacctinfo_destroy(jobacct);
-	if (bits_prev)
-		bit_free(bits_prev);
 	/*********************************************/
 
 	/*
