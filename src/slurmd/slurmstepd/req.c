@@ -1615,7 +1615,7 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 	Buf buffer = NULL;
 	bool lock_set = false;
 
-	debug("_handle_completion for %ps", &job->step_id);
+	info("BUG10723: _handle_completion for %ps", &job->step_id);
 
 	debug3("  uid = %d", uid);
 	if (!_slurm_authorized_user(uid)) {
@@ -1675,37 +1675,39 @@ _handle_completion(int fd, stepd_step_rec_t *job, uid_t uid)
 		/* bit_set_count_range is [first, end) so +1 last_bit */
 		int32_t last_bit_range = last_bit + 1;
 
-#if 0
-		char bits_string[128];
-		debug2("Setting range %d (bit %d) through %d(bit %d)",
+#if 1
+		info("BUG10732: Setting range %d (bit %d) through %d(bit %d)",
 		       first, first_bit,
 		       last, last_bit);
-		bit_fmt(bits_string, sizeof(bits_string), step_complete.bits);
-		debug2("  before bits: %s", bits_string);
+		info("BUG10723: before bits: %s", bit_fmt_full(step_complete.bits));
 #endif
 		if (!(set_bits = bit_set_count_range(step_complete.bits,
 						     first_bit,
 						     last_bit_range))) {
 			bit_nset(step_complete.bits, first_bit, last_bit);
 		} else if (set_bits == (last_bit_range - first_bit)) {
-			debug("Step complete from %d to %d was already processed on rank %d. Probably a RPC was resent from a child.",
+			debug("BUG10723: Step complete from %d to %d was already processed on rank %d. Probably a RPC was resent from a child.",
 			      first, last, step_complete.rank);
 			goto timeout;
 		} else {
-			error("Step complete from %d to %d was half-way processed on rank %d. This should never happen.",
+			error("BUG10732: Step complete from %d to %d was half-way processed on rank %d. This should never happen.",
 			      first, last, step_complete.rank);
 			goto timeout;
 		}
 
-#if 0
-		bit_fmt(bits_string, sizeof(bits_string), step_complete.bits);
-		debug2("  after bits: %s", bits_string);
+#if 1
+		info("BUG10723: after bits: %s", bit_fmt_full(step_complete.bits));
 #endif
 	}
 	step_complete.step_rc = MAX(step_complete.step_rc, step_rc);
 
 	/************* acct stuff ********************/
+	info("BUG10723: %s:%d:%ps aggregating jobacct to step_complete",
+	      __func__, __LINE__, &job->step_id);
 	jobacctinfo_aggregate(step_complete.jobacct, jobacct);
+
+	static bool first_sleep = true;
+	if(first_sleep) {sleep(6); first_sleep=false;}
 timeout:
 	jobacctinfo_destroy(jobacct);
 	/*********************************************/

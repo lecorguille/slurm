@@ -1177,6 +1177,9 @@ extern void jobacctinfo_aggregate(jobacctinfo_t *dest, jobacctinfo_t *from)
 	if (!from)
 		return;
 
+	info("BUG10723: before: user_cpu_sec:%u sys_cpu_sec:%u",
+	     dest->user_cpu_sec, dest->sys_cpu_sec);
+
 	dest->user_cpu_sec	+= from->user_cpu_sec;
 	dest->user_cpu_usec	+= from->user_cpu_usec;
 	while (dest->user_cpu_usec >= 1E6) {
@@ -1199,6 +1202,9 @@ extern void jobacctinfo_aggregate(jobacctinfo_t *dest, jobacctinfo_t *from)
 	}
 
 	_jobacctinfo_aggregate_tres_usage(dest, from);
+
+	info("BUG10723: after: user_cpu_sec:%u sys_cpu_sec:%u",
+	     dest->user_cpu_sec, dest->sys_cpu_sec);
 }
 
 extern void jobacctinfo_2_stats(slurmdb_stats_t *stats, jobacctinfo_t *jobacct)

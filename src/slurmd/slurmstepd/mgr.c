@@ -771,7 +771,7 @@ _one_step_complete_msg(stepd_step_rec_t *job, int first, int last)
 	 * can be built with out the hostlist from the credential.
 	 */
 	if (step_complete.parent_rank != -1) {
-		debug3("Rank %d sending complete to rank %d, range %d to %d",
+		info("BUG10723: Rank %d sending complete to rank %d, range %d to %d",
 		       step_complete.rank, step_complete.parent_rank,
 		       first, last);
 		/* On error, pause then try sending to parent again.
@@ -779,14 +779,19 @@ _one_step_complete_msg(stepd_step_rec_t *job, int first, int last)
 		 * of the way that the launch message forwarding works.
 		 */
 		for (i = 0; i < REVERSE_TREE_PARENT_RETRY; i++) {
-			if (i)
+			if (i) {
+				info("BUG10723: %ps i:%d prev retcode=%d rc=%d Rank %d sending complete to rank %d, range %d to %d",
+				     &job->step_id, i, retcode, rc,
+				     step_complete.rank,
+				     step_complete.parent_rank, first, last);
 				sleep(1);
+			}
 			retcode = slurm_send_recv_rc_msg_only_one(&req, &rc, 0);
 			if ((retcode == 0) && (rc == 0))
 				goto finished;
 		}
 		/* on error AGAIN, send to the slurmctld instead */
-		debug3("Rank %d sending complete to slurmctld instead, range "
+		info("BUG10723: Rank %d sending complete to slurmctld instead, range "
 		       "%d to %d", step_complete.rank, first, last);
 	}  else {
 		/* this is the base of the tree, its parent is slurmctld */
