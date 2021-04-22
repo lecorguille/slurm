@@ -3397,7 +3397,7 @@ static void _slurm_rpc_step_complete(slurm_msg_t *msg)
 
 	/* init */
 	START_TIMER;
-	log_flag(STEPS, "Processing RPC details: REQUEST_STEP_COMPLETE for %ps nodes %u-%u rc=%u",
+	info("Processing RPC details: REQUEST_STEP_COMPLETE for %ps nodes %u-%u rc=%u",
 		 &req->step_id, req->range_first, req->range_last,
 		 req->step_rc);
 

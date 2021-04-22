@@ -686,9 +686,10 @@ extern void stepd_wait_for_children_slurmstepd(stepd_step_rec_t *job)
 		ts.tv_sec += time(NULL) + REVERSE_TREE_CHILDREN_TIMEOUT;
 
 		while((left = bit_clear_count(step_complete.bits)) > 0) {
-			debug3("Rank %d waiting for %d (of %d) children",
+			debug3("Rank %d waiting for %d (of %d) children bits:%s timeout:%ld",
 			       step_complete.rank, left,
-			       step_complete.children);
+			       step_complete.children, bit_fmt_full(step_complete.bits),
+			       ts.tv_sec);
 			rc = pthread_cond_timedwait(&step_complete.cond,
 						    &step_complete.lock, &ts);
 			if (rc == ETIMEDOUT) {
@@ -706,6 +707,8 @@ extern void stepd_wait_for_children_slurmstepd(stepd_step_rec_t *job)
 		debug2("Rank %d has no children slurmstepd",
 		       step_complete.rank);
 	}
+
+	info("BUG10723: Done waiting for children");
 
 	step_complete.step_rc = _get_exit_code(job);
 	step_complete.wait_children = false;
@@ -816,6 +819,7 @@ _one_step_complete_msg(stepd_step_rec_t *job, int first, int last)
 	}
 
 finished:
+	info("BUG10723: done sending complete message");
 	jobacctinfo_destroy(msg.jobacct);
 }
 

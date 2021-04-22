@@ -540,8 +540,9 @@ _send_slurmstepd_init(int fd, int type, void *req,
 		max_depth = 0;
 #endif
 	}
-	debug3("slurmstepd rank %d (%s), parent rank %d (%s), "
+	debug3("%ps: slurmstepd rank %d (%s), parent rank %d (%s), "
 	       "children %d, depth %d, max_depth %d",
+	       &((launch_tasks_request_msg_t *)req)->step_id,
 	       rank, conf->node_name,
 	       parent_rank, parent_alias ? parent_alias : "NONE",
 	       children, depth, max_depth);
