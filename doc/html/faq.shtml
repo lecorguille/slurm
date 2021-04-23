@@ -273,6 +273,14 @@ establish uniform hard resource limits for users on all nodes
 within a cluster to prevent this from occurring.</li>
 <li>PropagateResourceLimits or PropagateResourceLimitsExcept parameters are
 configured in slurm.conf and avoid propagation of specified limits.</li>
+<li>If slurmd is managed by Systemd, <span class="commandline">/etc/security/limits.conf</span> is useless. 
+To overwrite the default value, create a file <span class="commandline">/etc/systemd/system/slurmd.service.d/core_limit.conf</span>
+with the contents:</li>
+<pre>
+[Service]
+LimitCORE=0
+LimitNOFILE=250000
+</pre>
 </ul>
 </p>
 <p>NOTE: This may produce the error message &quot;Can't propagate RLIMIT_...&quot;.
